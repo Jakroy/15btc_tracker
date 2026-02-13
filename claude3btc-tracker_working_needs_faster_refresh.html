@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTC 15m Tracker — Polymarket</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #06060b;
+    --surface: #0d0d14;
+    --surface-2: #13131d;
+    --border: #1a1a2e;
+    --text: #e8e8f0;
+    --text-dim: #6b6b80;
+    --green: #00e87b;
+    --green-bg: rgba(0,232,123,0.08);
+    --green-glow: rgba(0,232,123,0.15);
+    --red: #ff4466;
+    --red-bg: rgba(255,68,102,0.08);
+    --red-glow: rgba(255,68,102,0.15);
+    --accent: #7c6ff7;
+    --accent-dim: rgba(124,111,247,0.1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 36px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .brand-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, #f7931a, #e8720c);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700;
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(247,147,26,0.25);
+  }
+
+  .brand-text h1 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .brand-text span {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 100px;
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--text-dim);
+  }
+
+  .live-dot.active {
+    background: var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--green-glow); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 6px transparent; }
+  }
+
+  .market-question {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+
+  .market-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    letter-spacing: -0.5px;
+    line-height: 1.3;
+  }
+
+  .market-title a {
+    color: var(--text);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .market-title a:hover { color: var(--accent); }
+
+  .pm-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--accent);
+    text-decoration: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 8px 14px;
+    border: 1px solid rgba(124,111,247,0.25);
+    border-radius: 8px;
+    transition: all 0.2s;
+    margin-bottom: 24px;
+  }
+
+  .pm-link:hover {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+  }
+
+  .countdown-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+  }
+
+  .countdown-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .countdown-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .countdown-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text);
+  }
+
+  .countdown-progress {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .countdown-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    border-radius: 2px;
+    transition: width 1s linear;
+  }
+
+  .odds-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .odds-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .odds-card.up {
+    border-color: rgba(0,232,123,0.2);
+    background: linear-gradient(180deg, var(--green-bg) 0%, var(--surface) 60%);
+  }
+
+  .odds-card.down {
+    border-color: rgba(255,68,102,0.2);
+    background: linear-gradient(180deg, var(--red-bg) 0%, var(--surface) 60%);
+  }
+
+  .odds-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+
+  .odds-card.up .odds-label { color: var(--green); }
+  .odds-card.down .odds-label { color: var(--red); }
+
+  .odds-pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .odds-card.up .odds-pct { color: var(--green); }
+  .odds-card.down .odds-pct { color: var(--red); }
+
+  .odds-cents {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .split-bar {
+    display: flex;
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    gap: 2px;
+  }
+
+  .split-up {
+    background: var(--green);
+    border-radius: 3px 0 0 3px;
+    transition: width 0.6s ease;
+  }
+
+  .split-down {
+    background: var(--red);
+    border-radius: 0 3px 3px 0;
+    transition: width 0.6s ease;
+  }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .stat-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+
+  .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .section-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 14px;
+  }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 32px;
+  }
+
+  .history-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    transition: background 0.2s;
+  }
+
+  .history-item:hover { background: var(--surface-2); }
+  .history-time { color: var(--text-dim); font-size: 12px; min-width: 80px; }
+  .history-odds { display: flex; gap: 16px; }
+  .history-up { color: var(--green); }
+  .history-down { color: var(--red); }
+
+  .history-result {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-weight: 600;
+    min-width: 60px;
+    text-align: center;
+  }
+
+  .result-up { background: var(--green-bg); color: var(--green); }
+  .result-down { background: var(--red-bg); color: var(--red); }
+  .result-pending { background: var(--accent-dim); color: var(--accent); }
+
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 80px 0;
+    gap: 16px;
+  }
+
+  .spinner {
+    width: 28px; height: 28px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  .footer {
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .footer a { color: var(--accent); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn-connect {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    background: var(--accent-dim);
+    color: var(--accent);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-connect:hover { background: rgba(124,111,247,0.2); }
+  .btn-connect:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .wallet-addr {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 8px;
+  }
+  .usdce-balance {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--green);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 8px;
+  }
+
+  .trade-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .trade-panel h3 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .trade-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+  }
+  .trade-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .trade-field label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .trade-field input, .trade-field select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    min-width: 80px;
+  }
+  .trade-field input:focus, .trade-field select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .btn-trade {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    background: var(--green);
+    color: var(--bg);
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-trade:hover { opacity: 0.9; }
+  .btn-trade:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-trade.down { background: var(--red); }
+  .buy-99-row {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .buy-99-row .label-99 {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .buy-99-btns {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .btn-99 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, box-shadow 0.2s;
+  }
+  .btn-99:hover { opacity: 0.9; }
+  .btn-99:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-99 { background: var(--accent); color: var(--bg); }
+  .btn-99.at-99 { box-shadow: 0 0 0 2px var(--text); }
+  .positions-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .positions-panel h3 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .positions-balance {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  .positions-balance strong { color: var(--green); }
+  .open-orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .open-order-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .open-order-item .side-up { color: var(--green); }
+  .open-order-item .side-down { color: var(--red); }
+  .open-order-item .order-id { color: var(--text-dim); font-size: 10px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+  .btn-cancel {
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--red);
+    background: transparent;
+    color: var(--red);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .btn-cancel:hover { background: var(--red-bg); }
+  .trade-msg {
+    font-size: 12px;
+    margin-top: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 20px;
+  }
+  .trade-msg.error { color: var(--red); }
+  .trade-msg.success { color: var(--green); }
+
+  .proxy-fallback {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+  }
+  .proxy-fallback input {
+    flex: 1;
+    min-width: 200px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .proxy-fallback input::placeholder { color: var(--text-dim); }
+  .btn-proxy {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--accent);
+    background: var(--accent-dim);
+    color: var(--accent);
+    cursor: pointer;
+  }
+  .btn-proxy:hover { background: rgba(124,111,247,0.2); }
+
+  .local-server-help {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+  }
+  .local-server-help h4 {
+    color: var(--accent);
+    margin-bottom: 10px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .local-server-help p { margin-bottom: 10px; color: var(--text-dim); line-height: 1.5; }
+  .local-server-help code {
+    display: block;
+    background: var(--bg);
+    padding: 12px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    margin: 8px 0;
+    overflow-x: auto;
+  }
+  .local-server-help a { color: var(--accent); }
+
+  .debug-log {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    max-height: 150px;
+    overflow-y: auto;
+    display: none;
+  }
+
+  .debug-log.show { display: block; }
+
+  .data-status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: inline-block;
+  }
+  .data-status.ok { color: var(--green); border-color: rgba(0,232,123,0.2); }
+  .data-status.backoff { color: var(--red); border-color: rgba(255,68,102,0.2); }
+
+  .cors-banner {
+    background: var(--red-bg);
+    border: 1px solid var(--red);
+    color: var(--red);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .cors-banner.show { display: block; }
+
+  @media (max-width: 600px) {
+    .odds-pct { font-size: 36px; }
+    .countdown-time { font-size: 22px; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .header { flex-direction: column; gap: 12px; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div class="brand">
+      <div class="brand-icon">₿</div>
+      <div class="brand-text">
+        <h1>BTC 15m Tracker</h1>
+        <span>Polymarket Up/Down</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="wallet-addr" id="walletAddr" style="display:none;">—</div>
+      <div id="proxyFallback" class="proxy-fallback" style="display:none;">
+        <input type="text" id="proxyInput" placeholder="Proxy address (from polymarket.com/settings)" />
+        <button type="button" class="btn-proxy" id="btnUseProxy">Use proxy</button>
+      </div>
+      <button type="button" class="btn-connect" id="btnConnect" onclick="typeof connectMetaMask==='function'&&connectMetaMask()">Connect MetaMask</button>
+      <span class="usdce-balance" id="usdceBalance" style="display:none;">USDCe: $0.00</span>
+      <span class="trade-msg" id="connectStatus" style="font-size:11px;max-width:200px;"></span>
+      <div class="live-badge">
+        <div class="live-dot" id="liveDot"></div>
+        <span id="statusText">Connecting...</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="localServerHelp" class="local-server-help" style="display:none;">
+    <h4>Use MetaMask: serve this page over HTTP</h4>
+    <p>This page was opened from your computer (file://). Browsers block wallet extensions on file://. Serve the page locally, then open the link below.</p>
+    <p><strong>1.</strong> In a terminal, go to this file’s folder and run:</p>
+    <code id="localServerCommand">python3 -m http.server 8080</code>
+    <p><strong>2.</strong> Open in your browser:</p>
+    <p><a id="localServerUrl" href="#" target="_blank" rel="noopener">http://localhost:8080/</a></p>
+  </div>
+
+  <div class="cors-banner" id="corsBanner"></div>
+
+  <div id="content">
+    <div class="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">Finding active BTC 15m market...</div>
+    </div>
+  </div>
+
+  <div class="debug-log" id="debugLog"></div>
+
+  <div class="footer">
+    <span id="lastUpdate">—</span>
+    <span class="data-status" id="dataStatus">DATA: —</span>
+    <span>Data from <a href="https://polymarket.com" target="_blank">Polymarket</a></span>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+<script>
+const GAMMA = 'https://gamma-api.polymarket.com';
+const CLOB = 'https://clob.polymarket.com';
+// User-configurable CLOB base URL.  Point to your own relay if CORS
+// blocks direct browser→CLOB requests.  Default: direct.
+let CLOB_BASE_URL = CLOB;
+const PROXIES = [
+  url => 'https://corsproxy.io/?' + encodeURIComponent(url),
+  url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
+];
+let activeProxy = null;
+const INTERVAL = 900;
+let currentSlug = null;
+let timerInterval = null;
+/** @type {{ tokenIds: string[], isUpFirst: boolean }|null} */
+let clobTokenInfo = null;
+let tradingClient = null;
+let walletAddress = null;
+let pendingCreds = null;
+var autoBuy99Done = { up: false, down: false };
+var waitingFor99 = false;
+
+// ── Polling state ───────────────────────────────
+const POLL_BASE_MS = 2000;  // default interval (used for initial pollState)
+
+const pollState = {
+  inFlight: false,
+  failStreak: 0,         // consecutive CLOB failures (drives backoff)
+  lastIntervalMs: POLL_BASE_MS,
+  running: false,
+};
+
+// ── Discovery state (single-flight + cache) ─────
+let discoveryId = 0;          // monotonic counter for instrumentation
+let discoveryInFlight = false; // mutex: only one findActive at a time
+
+function log(msg) {
+  console.log('[BTC15m]', msg);
+  const el = document.getElementById('debugLog');
+  if (el) { el.innerHTML += msg + '<br>'; el.scrollTop = el.scrollHeight; }
+}
+
+if (location.search.includes('debug')) {
+  document.getElementById('debugLog').classList.add('show');
+}
+
+// ── API fetch with proxy fallback ───────────────
+async function gfetch(path) {
+  const url = GAMMA + path;
+  if (activeProxy) {
+    try { const r = await fetch(activeProxy(url)); if (r.ok) return r.json(); } catch {}
+  }
+  try { const r = await fetch(url); if (r.ok) { activeProxy = null; return r.json(); } } catch {}
+  for (const p of PROXIES) {
+    try { const r = await fetch(p(url)); if (r.ok) { activeProxy = p; return r.json(); } } catch {}
+  }
+  return null;
+}
+
+// ── CLOB fetch (live order book prices) ─────────
+// POST requests NEVER fall back to public CORS proxies (body would be
+// forwarded to an untrusted third party).  GET-only requests may still
+// try proxies as a convenience.  If CORS blocks a POST, a banner is
+// shown telling the user to configure their own relay.
+async function clobFetch(path, opts = {}) {
+  const url = CLOB_BASE_URL + path;
+  const isPost = (opts.method || 'GET').toUpperCase() === 'POST';
+  try {
+    const r = await fetch(url, opts);
+    if (r.ok) {
+      hideClobBanner();
+      return r.json();
+    }
+  } catch (e) { /* CORS or network */ }
+
+  // POST must not go through public proxies
+  if (isPost) {
+    showClobBanner();
+    return null;
+  }
+
+  // GET-only: try public proxies as last resort
+  for (const p of PROXIES) {
+    try {
+      const r = await fetch(p(url), opts);
+      if (r.ok) return r.json();
+    } catch {}
+  }
+  return null;
+}
+
+function showClobBanner() {
+  const el = document.getElementById('corsBanner');
+  if (!el) return;
+  el.textContent = 'CLOB CORS blocked for POST — set CLOB_BASE_URL to your own relay (local Express / Cloudflare Worker).';
+  el.classList.add('show');
+}
+function hideClobBanner() {
+  const el = document.getElementById('corsBanner');
+  if (el) el.classList.remove('show');
+}
+
+// ── Slug helpers ────────────────────────────────
+function getBucket() { return Math.floor(Date.now() / 1000 / INTERVAL) * INTERVAL; }
+function slug(ts) { return `btc-updown-15m-${ts}`; }
+
+function etRange(ts) {
+  const s = new Date(ts * 1000);
+  const e = new Date((ts + INTERVAL) * 1000);
+  const f = d => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' });
+  return `${f(s)} – ${f(e)} ET`;
+}
+
+function etTime(ts) {
+  return new Date(ts * 1000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' });
+}
+
+// ── Fetch event ─────────────────────────────────
+async function fetchEvent(s) {
+  // Try events endpoint (this is what polymarket.com/event/... uses)
+  let d = await gfetch(`/events?slug=${s}`);
+  if (d && d.length > 0) return d[0];
+
+  // Fallback: markets endpoint
+  d = await gfetch(`/markets?slug=${s}`);
+  if (d && d.length > 0) {
+    const m = d[0];
+    return { slug: m.slug, title: m.question, markets: [m],
+      volume: m.volume, volume24hr: m.volume24hr, liquidity: m.liquidity,
+      endDate: m.endDate, closed: m.closed, active: m.active };
+  }
+  return null;
+}
+
+// ── Extract CLOB token IDs from Gamma market (for live prices like Polyism) ─
+function extractClobTokenInfo(ev) {
+  const m = ev.markets?.[0];
+  if (!m) return null;
+  try {
+    const raw = m.clobTokenIds ?? m.clob_token_ids;
+    const tokenIds = typeof raw === 'string' ? JSON.parse(raw || '[]') : (Array.isArray(raw) ? raw : []);
+    const outcomes = typeof m.outcomes === 'string' ? JSON.parse(m.outcomes || '[]') : (Array.isArray(m.outcomes) ? m.outcomes : []);
+    if (tokenIds.length >= 2 && outcomes.length >= 2) {
+      const isUpFirst = (outcomes[0] || '').toLowerCase().includes('up');
+      return { tokenIds, isUpFirst };
+    }
+  } catch {}
+  return null;
+}
+
+// ── Parse odds from Gamma (fallback when CLOB not used) ─────────────────────
+function parseOdds(ev) {
+  const m = ev.markets?.[0];
+  if (!m) return { up: 50, down: 50 };
+  try {
+    const p = JSON.parse(m.outcomePrices || '[]');
+    const o = JSON.parse(m.outcomes || '[]');
+    if (p.length >= 2 && o.length >= 2) {
+      const p0 = parseFloat(p[0]), p1 = parseFloat(p[1]);
+      const isUp0 = (o[0] || '').toLowerCase().includes('up');
+      return isUp0
+        ? { up: Math.round(p0 * 100), down: Math.round(p1 * 100) }
+        : { up: Math.round(p1 * 100), down: Math.round(p0 * 100) };
+    }
+  } catch {}
+  return { up: 50, down: 50 };
+}
+
+function formatUSD(n) {
+  n = parseFloat(n) || 0;
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K';
+  return n > 0 ? '$' + n.toFixed(0) : '—';
+}
+
+// ── Find active market (single-flight, bounded slug search) ─────────────────
+async function findActive() {
+  // Single-flight: if already running, return null (caller will retry)
+  if (discoveryInFlight) {
+    log('[DISCOVERY] blocked — already in flight');
+    return null;
+  }
+  discoveryInFlight = true;
+  const dId = ++discoveryId;
+  const t0 = Date.now();
+  let gammaReqs = 0;
+
+  // Wrap fetchEvent to count Gamma requests
+  const countedFetchEvent = async (s) => {
+    gammaReqs++;
+    return fetchEvent(s);
+  };
+
+  try {
+    const b = getBucket();
+    const now = Date.now() / 1000;
+    log(`[DISCOVERY #${dId}] start bucket=${b} (${new Date(b * 1000).toISOString().substr(11,5)} UTC)`);
+
+    // Try current bucket first, then next (only 2 slugs, not 4)
+    for (const ts of [b, b + INTERVAL]) {
+      const s = slug(ts);
+      const ev = await countedFetchEvent(s);
+      if (ev) {
+        const endTs = ts + INTERVAL;
+        if (endTs > now) {
+          log(`[DISCOVERY #${dId}] found ${s} in ${Date.now() - t0}ms (${gammaReqs} Gamma reqs)`);
+          return { event: ev, slug: s, startTs: ts, endTs };
+        }
+      }
+    }
+
+    log(`[DISCOVERY #${dId}] no active market in ${Date.now() - t0}ms (${gammaReqs} Gamma reqs)`);
+    return null;
+  } finally {
+    discoveryInFlight = false;
+  }
+}
+
+// ── Fetch recent closed markets ─────────────────
+async function fetchHistory() {
+  const b = getBucket();
+  const results = [];
+  // Fetch in parallel for speed — last 6 markets
+  const promises = [];
+  for (let i = 1; i <= 6; i++) {
+    const ts = b - i * INTERVAL;
+    promises.push(fetchEvent(slug(ts)).then(ev => ev ? { event: ev, startTs: ts } : null));
+  }
+  const settled = await Promise.all(promises);
+  return settled.filter(Boolean);
+}
+
+// ── Render (layout built once per market; history patched separately) ────────
+function render(act) {
+  const odds = parseOdds(act.event);
+  const m = act.event.markets?.[0];
+  const vol24h = m?.volume24hr || act.event.volume24hr || 0;
+  const liq = m?.liquidityNum || m?.liquidity || act.event.liquidity || 0;
+  const vol = m?.volumeNum || m?.volume || act.event.volume || 0;
+  const pmLink = `https://polymarket.com/event/${act.slug}`;
+
+  const html = `
+    <div class="market-question">Current Market</div>
+    <div class="market-title">
+      <a href="${pmLink}" target="_blank">Bitcoin Up or Down — ${etRange(act.startTs)}</a>
+    </div>
+    <a class="pm-link" href="${pmLink}" target="_blank">View on Polymarket ↗</a>
+
+    <div class="countdown-bar">
+      <div class="countdown-top">
+        <div class="countdown-label">Resolves in</div>
+        <div class="countdown-time" id="cd">--:--</div>
+      </div>
+      <div class="countdown-progress"><div class="countdown-fill" id="cdFill"></div></div>
+    </div>
+
+    <div class="odds-container">
+      <div class="odds-card up">
+        <div class="odds-label">↑ Up</div>
+        <div class="odds-pct" id="upPct">${odds.up}%</div>
+        <div class="odds-cents" id="upCents">${odds.up}¢ / share</div>
+      </div>
+      <div class="odds-card down">
+        <div class="odds-label">↓ Down</div>
+        <div class="odds-pct" id="downPct">${odds.down}%</div>
+        <div class="odds-cents" id="downCents">${odds.down}¢ / share</div>
+      </div>
+    </div>
+
+    <div class="split-bar">
+      <div class="split-up" id="splitUp" style="width:${odds.up}%"></div>
+      <div class="split-down" id="splitDown" style="width:${odds.down}%"></div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-item"><div class="stat-label">24h Volume</div><div class="stat-value">${formatUSD(vol24h)}</div></div>
+      <div class="stat-item"><div class="stat-label">Liquidity</div><div class="stat-value">${formatUSD(liq)}</div></div>
+      <div class="stat-item"><div class="stat-label">Total Volume</div><div class="stat-value">${formatUSD(vol)}</div></div>
+    </div>
+
+    <div class="trade-panel" id="tradePanel">
+      <h3>Trade (MetaMask)</h3>
+      <div class="trade-form">
+        <div class="trade-field">
+          <label>Outcome</label>
+          <select id="tradeSide">
+            <option value="up">↑ Up</option>
+            <option value="down">↓ Down</option>
+          </select>
+        </div>
+        <div class="trade-field">
+          <label>Price (¢)</label>
+          <input type="number" id="tradePrice" min="1" max="99" step="1" placeholder="50" />
+        </div>
+        <div class="trade-field">
+          <label>Size (shares)</label>
+          <input type="number" id="tradeSize" min="1" step="1" value="10" />
+        </div>
+        <button type="button" class="btn-trade" id="btnPlaceOrder">Place order</button>
+      </div>
+      <div class="buy-99-row">
+        <label class="label-99" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="autoBuy99Check" checked />
+          <span>Auto-buy at 99¢ when one side hits 99¢</span>
+        </label>
+        <div class="label-99">Quick: buy at 99¢</div>
+        <div class="buy-99-btns">
+          <button type="button" class="btn-99" id="btnBuy99">Buy at 99¢</button>
+        </div>
+      </div>
+      <div class="trade-msg" id="tradeMsg"></div>
+      <p style="font-size:11px;color:var(--text-dim);margin-top:12px;">Trades use <strong>USDCe</strong> on Polygon. Fund your proxy wallet with USDCe at polymarket.com.</p>
+    </div>
+
+    <div class="positions-panel" id="positionsPanel">
+      <h3>Open orders &amp; balance (USDCe)</h3>
+      <div id="positionsContent">
+        <p style="font-size:12px;color:var(--text-dim);">Connect MetaMask to see balance and open orders.</p>
+      </div>
+      <button type="button" class="btn-proxy" id="btnRefreshPositions" style="margin-top:10px;display:none;">Refresh</button>
+    </div>
+
+    <div id="historyContainer"></div>`;
+
+  document.getElementById('content').innerHTML = html;
+  startTimer(act.startTs, act.endTs);
+  setupTradePanel(odds);
+}
+
+// ── Patch history only (no full re-render) ──────
+function renderHistory(hist) {
+  const container = document.getElementById('historyContainer');
+  if (!container) return;
+  if (!hist || hist.length === 0) { container.innerHTML = ''; return; }
+
+  let html = '<div class="section-title">Recent Markets</div><div class="history-list">';
+  for (const h of hist) {
+    const ho = parseOdds(h.event);
+    const closed = h.event.closed;
+    let badge = '<span class="history-result result-pending">Active</span>';
+    if (closed) {
+      const hm = h.event.markets?.[0];
+      if (hm) {
+        try {
+          const hp = JSON.parse(hm.outcomePrices || '[]');
+          const ho2 = JSON.parse(hm.outcomes || '[]');
+          const isUp0 = (ho2[0]||'').toLowerCase().includes('up');
+          const upPrice = isUp0 ? parseFloat(hp[0]) : parseFloat(hp[1]);
+          badge = upPrice > 0.9
+            ? '<span class="history-result result-up">↑ Up</span>'
+            : '<span class="history-result result-down">↓ Down</span>';
+        } catch { badge = '<span class="history-result result-pending">Closed</span>'; }
+      }
+    }
+    html += `<div class="history-item">
+      <span class="history-time">${etTime(h.startTs)}</span>
+      <div class="history-odds"><span class="history-up">↑${ho.up}%</span><span class="history-down">↓${ho.down}%</span></div>
+      ${badge}
+    </div>`;
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// ── Countdown timer ─────────────────────────────
+function startTimer(startTs, endTs) {
+  if (timerInterval) clearInterval(timerInterval);
+  function tick() {
+    const now = Date.now() / 1000;
+    const rem = Math.max(0, endTs - now);
+    const pct = Math.min(100, ((now - startTs) / (endTs - startTs)) * 100);
+    const mm = Math.floor(rem / 60), ss = Math.floor(rem % 60);
+    const el = document.getElementById('cd');
+    const fill = document.getElementById('cdFill');
+    if (el) el.textContent = `${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+    if (fill) fill.style.width = pct + '%';
+    if (rem <= 0) {
+      clearInterval(timerInterval);
+      log('Market ended → refreshing in 5s');
+      setTimeout(load, 5000);
+    }
+  }
+  tick();
+  timerInterval = setInterval(tick, 1000);
+}
+
+// ── Patch odds into existing DOM (no layout rebuild) ────────────────────────
+function patchOdds(upCents, downCents) {
+  const up = document.getElementById('upPct');
+  const dn = document.getElementById('downPct');
+  const upC = document.getElementById('upCents');
+  const dnC = document.getElementById('downCents');
+  const splitUp = document.getElementById('splitUp');
+  const splitDown = document.getElementById('splitDown');
+  if (up) up.textContent = upCents + '%';
+  if (dn) dn.textContent = downCents + '%';
+  if (upC) upC.textContent = upCents + '¢ / share';
+  if (dnC) dnC.textContent = downCents + '¢ / share';
+  if (splitUp) splitUp.style.width = upCents + '%';
+  if (splitDown) splitDown.style.width = downCents + '%';
+  document.getElementById('lastUpdate').textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+// ── Refresh odds once (called by pollLoop — CLOB only, no Gamma) ────────────
+// This function MUST NOT call fetchEvent / gfetch / any Gamma endpoint.
+// If CLOB is unreachable, it throws → pollLoop backs off.
+// Gamma is only used for discovery (findActive) and history (fetchHistory).
+async function refreshOddsOnce() {
+  if (!currentSlug) return;
+  if (!clobTokenInfo) {
+    throw new Error('No clobTokenInfo — cannot poll prices (CLOB token IDs missing)');
+  }
+
+  const body = [
+    { token_id: clobTokenInfo.tokenIds[0], side: 'BUY' },
+    { token_id: clobTokenInfo.tokenIds[1], side: 'BUY' }
+  ];
+  const prices = await clobFetch('/prices', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!prices || typeof prices !== 'object') {
+    throw new Error('CLOB /prices returned null or non-object');
+  }
+
+  const p0 = parseFloat(prices[clobTokenInfo.tokenIds[0]]?.BUY ?? 0.5);
+  const p1 = parseFloat(prices[clobTokenInfo.tokenIds[1]]?.BUY ?? 0.5);
+  const upCents = clobTokenInfo.isUpFirst ? Math.round(p0 * 100) : Math.round(p1 * 100);
+  const downCents = clobTokenInfo.isUpFirst ? Math.round(p1 * 100) : Math.round(p0 * 100);
+  patchOdds(upCents, downCents);
+  updateBuy99Highlight();
+  tryAutoBuy99(upCents, downCents);
+  if (waitingFor99 && (upCents === 99 || downCents === 99)) {
+    waitingFor99 = false;
+    updateBuy99ButtonLabel();
+    var btn = document.getElementById('btnBuy99');
+    if (btn) btn.disabled = true;
+    if (upCents === 99) await placeOrderAt99('up', false);
+    if (downCents === 99) await placeOrderAt99('down', false);
+    if (btn) btn.disabled = false;
+  }
+}
+
+// ── Adaptive poll loop (replaces setInterval) ───────────────────────────────
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function updateDataStatus() {
+  const el = document.getElementById('dataStatus');
+  if (!el) return;
+  const sec = (pollState.lastIntervalMs / 1000).toFixed(1);
+  if (pollState.failStreak > 0) {
+    el.textContent = `DATA: BACKOFF (${sec}s) #${pollState.failStreak}`;
+    el.className = 'data-status backoff';
+  } else {
+    el.textContent = `DATA: CLOB OK (${sec}s)`;
+    el.className = 'data-status ok';
+  }
+}
+
+// ── Adaptive polling interval (crash-proof, never throws) ───────────────────
+function nextIntervalMs(endTs) {
+  try {
+    // Exponential backoff on failures (capped at 15s)
+    if (pollState.failStreak > 0) {
+      const backoffMs = Math.min(15000, 2000 * Math.pow(2, pollState.failStreak - 1));
+      const jitter = Math.floor(Math.random() * 300) - 150;  // ±150ms
+      return Math.max(1000, backoffMs + jitter);
+    }
+
+    // Adaptive polling based on time to market expiry
+    if (endTs && typeof endTs === 'number') {
+      const now = Date.now() / 1000;
+      const secsToEnd = endTs - now;
+      const secsAfterEnd = now - endTs;
+
+      // Last 10 seconds before expiry → fast poll (800ms)
+      if (secsToEnd > 0 && secsToEnd <= 10) {
+        const jitter = Math.floor(Math.random() * 200) - 100;
+        return Math.max(600, 800 + jitter);
+      }
+
+      // First 10 seconds after expiry → fast poll (800ms) to catch resolution
+      if (secsAfterEnd >= 0 && secsAfterEnd <= 10) {
+        const jitter = Math.floor(Math.random() * 200) - 100;
+        return Math.max(600, 800 + jitter);
+      }
+
+      // Last 60 seconds before expiry → medium poll (1500ms)
+      if (secsToEnd > 10 && secsToEnd <= 60) {
+        const jitter = Math.floor(Math.random() * 200) - 100;
+        return Math.max(1200, 1500 + jitter);
+      }
+    }
+
+    // Default steady polling (2000ms)
+    const jitter = Math.floor(Math.random() * 200) - 100;  // ±100ms
+    return Math.max(1500, 2000 + jitter);
+  } catch (e) {
+    // Crash-proof: if anything goes wrong, return safe default
+    console.error('[nextIntervalMs] Error computing interval:', e);
+    return 2000;
+  }
+}
+
+// endTsRef is a function so pollLoop always reads the latest market end time
+async function pollLoop(getEndTs) {
+  if (pollState.running) {
+    log('[GUARD] pollLoop already running, ignoring duplicate start');
+    return;
+  }
+  pollState.running = true;
+  log('[POLL] started');
+
+  try {
+    while (pollState.running) {
+      if (!pollState.inFlight && currentSlug) {
+        pollState.inFlight = true;
+        try {
+          await refreshOddsOnce();
+          pollState.failStreak = 0;
+        } catch (e) {
+          pollState.failStreak++;
+          log('[POLL] fail #' + pollState.failStreak + ': ' + (e.message || e));
+        } finally {
+          pollState.inFlight = false;
+        }
+      }
+
+      const interval = nextIntervalMs(getEndTs());
+      pollState.lastIntervalMs = interval;
+      updateDataStatus();
+      await sleep(interval);
+    }
+  } catch (e) {
+    console.error('[POLL] pollLoop crashed:', e);
+    log('[POLL] CRASHED: ' + (e.message || e));
+  } finally {
+    pollState.running = false;
+    pollState.inFlight = false;
+    log('[POLL] stopped');
+  }
+}
+
+function stopPollLoop() {
+  pollState.running = false;
+  pollState.inFlight = false;
+  pollState.failStreak = 0;
+}
+
+// ── Trading (MetaMask + Polymarket CLOB) ────────────────────────────────────
+function setTradeMsg(msg, isError) {
+  const text = msg || '';
+  const cls = 'trade-msg' + (isError ? ' error' : (text ? ' success' : ''));
+  const el = document.getElementById('tradeMsg');
+  if (el) { el.textContent = text; el.className = cls; }
+  const status = document.getElementById('connectStatus');
+  if (status) { status.textContent = text; status.className = cls; status.style.visibility = text ? 'visible' : 'hidden'; }
+}
+
+function orderErrorMsg(e) {
+  var err = (e && e.response && e.response.data && e.response.data.error) || (e && e.message) || String(e);
+  if (/not enough balance|allowance/i.test(err)) {
+    return 'Not enough USDCe balance or allowance. Fund your proxy with USDCe on Polygon and set allowances at polymarket.com (e.g. deposit or place one trade there first).';
+  }
+  return err;
+}
+
+function getEthereumProvider() {
+  const e = typeof window !== 'undefined' ? window.ethereum : undefined;
+  if (!e) return null;
+  if (e.providers && Array.isArray(e.providers)) {
+    const metaMask = e.providers.find(function (p) { return p.isMetaMask; });
+    return metaMask || e.providers[0] || e;
+  }
+  return e;
+}
+
+async function connectMetaMask() {
+  const btn = document.getElementById('btnConnect');
+  const proxyFallback = document.getElementById('proxyFallback');
+  const proxyInput = document.getElementById('proxyInput');
+  if (!btn) return;
+  if (typeof ethers === 'undefined') {
+    setTradeMsg('Ethers library failed to load. Check the console or try refreshing.', true);
+    return;
+  }
+  btn.disabled = true;
+  setTradeMsg('Connecting...', false);
+  if (proxyFallback) proxyFallback.style.display = 'none';
+  pendingCreds = null;
+  let eth = getEthereumProvider();
+  if (!eth) {
+    setTradeMsg('Looking for MetaMask…', false);
+    await new Promise(function (r) { setTimeout(r, 1500); });
+    eth = getEthereumProvider();
+  }
+  if (!eth) {
+    var openVia = (typeof location !== 'undefined' && location.protocol === 'file:')
+      ? ' Open this page via http:// or https:// (file:// blocks extensions).'
+      : '';
+    setTradeMsg('MetaMask not detected. Install the MetaMask extension, unlock it, then refresh.' + openVia, true);
+    btn.disabled = false;
+    btn.textContent = 'Connect MetaMask';
+    return;
+  }
+  btn.textContent = 'Connecting...';
+  try {
+    const provider = new ethers.providers.Web3Provider(eth);
+    await provider.send('eth_requestAccounts', []);
+    const signer = provider.getSigner();
+    walletAddress = await signer.getAddress();
+    document.getElementById('walletAddr').textContent = walletAddress.slice(0, 6) + '…' + walletAddress.slice(-4);
+    document.getElementById('walletAddr').style.display = 'block';
+    const { ClobClient } = await import('https://esm.sh/@polymarket/clob-client');
+    const tempClient = new ClobClient(CLOB, 137, signer);
+    var creds = await tempClient.createOrDeriveApiKey();
+    if (creds && creds.apiKey && !creds.key) creds = { key: creds.apiKey, secret: creds.secret, passphrase: creds.passphrase };
+    const profile = await gfetch('/public-profile?address=' + encodeURIComponent(walletAddress));
+    const funder = (profile && profile.proxyWallet) ? profile.proxyWallet.trim() : null;
+    if (funder) {
+      tradingClient = new ClobClient(CLOB, 137, signer, creds, 2, funder);
+      btn.textContent = 'Connected';
+      setTradeMsg('Wallet connected (Polymarket proxy found). You can place orders.');
+      if (positionsRefreshInterval) clearInterval(positionsRefreshInterval);
+      loadOpenOrdersAndBalance();
+      positionsRefreshInterval = setInterval(loadOpenOrdersAndBalance, 30000);
+    } else {
+      pendingCreds = creds;
+      btn.textContent = 'Connected';
+      setTradeMsg('No proxy found for this wallet. Paste your proxy address from polymarket.com/settings and click Use proxy.');
+      if (proxyFallback) proxyFallback.style.display = 'flex';
+      if (proxyInput) proxyInput.value = '';
+    }
+  } catch (e) {
+    console.error('[BTC15m] Connect error:', e);
+    const msg = (e && e.message) ? e.message : String(e);
+    setTradeMsg(msg + (msg.includes('import') || msg.includes('module') ? ' Try trading on Polymarket directly via the link above.' : ''), true);
+    btn.disabled = false;
+    btn.textContent = 'Connect MetaMask';
+  }
+}
+
+async function useProxyAddress() {
+  const proxyInput = document.getElementById('proxyInput');
+  const proxyFallback = document.getElementById('proxyFallback');
+  const raw = proxyInput && proxyInput.value ? proxyInput.value.trim() : '';
+  if (!raw) {
+    setTradeMsg('Paste your proxy address from polymarket.com/settings.', true);
+    return;
+  }
+  if (!ethers.utils.isAddress(raw)) {
+    setTradeMsg('Invalid Ethereum address.', true);
+    return;
+  }
+  if (!window.ethereum || !pendingCreds) {
+    setTradeMsg('Connect MetaMask first, then paste proxy.', true);
+    return;
+  }
+  setTradeMsg('Connecting with proxy...', false);
+  try {
+    const eth = getEthereumProvider();
+    if (!eth) { setTradeMsg('MetaMask not detected. Refresh and connect again.', true); return; }
+    const provider = new ethers.providers.Web3Provider(eth);
+    const signer = provider.getSigner();
+    var creds = pendingCreds;
+    if (creds && creds.apiKey && !creds.key) creds = { key: creds.apiKey, secret: creds.secret, passphrase: creds.passphrase };
+    const { ClobClient } = await import('https://esm.sh/@polymarket/clob-client');
+    tradingClient = new ClobClient(CLOB, 137, signer, creds, 2, raw);
+    pendingCreds = null;
+    if (proxyFallback) proxyFallback.style.display = 'none';
+    setTradeMsg('Connected with proxy. You can place orders.');
+    if (positionsRefreshInterval) clearInterval(positionsRefreshInterval);
+    loadOpenOrdersAndBalance();
+    positionsRefreshInterval = setInterval(loadOpenOrdersAndBalance, 30000);
+  } catch (e) {
+    setTradeMsg(e.message || 'Failed to use proxy', true);
+  }
+}
+
+function setupTradePanel(odds) {
+  const priceEl = document.getElementById('tradePrice');
+  const sideEl = document.getElementById('tradeSide');
+  const sizeEl = document.getElementById('tradeSize');
+  const btnOrder = document.getElementById('btnPlaceOrder');
+  if (!priceEl || !sideEl || !btnOrder) return;
+  if (!priceEl.value || priceEl.value === '') priceEl.value = String(odds.up);
+
+  // Listeners must be re-attached after innerHTML replacement (old elements are GC'd)
+  sideEl.addEventListener('change', function () {
+    const upEl = document.getElementById('upPct');
+    const dnEl = document.getElementById('downPct');
+    const pct = this.value === 'up' ? (upEl ? parseInt(upEl.textContent, 10) : 50) : (dnEl ? parseInt(dnEl.textContent, 10) : 50);
+    if (!isNaN(pct)) priceEl.value = String(pct);
+  });
+  btnOrder.addEventListener('click', placeOrder);
+  const btn99 = document.getElementById('btnBuy99');
+  if (btn99) btn99.addEventListener('click', buyAt99);
+  var btnRefreshPos = document.getElementById('btnRefreshPositions');
+  if (btnRefreshPos) btnRefreshPos.addEventListener('click', loadOpenOrdersAndBalance);
+
+  if (tradingClient) loadOpenOrdersAndBalance();
+  updateBuy99Highlight();
+}
+
+function updateBuy99Highlight() {
+  const upEl = document.getElementById('upPct');
+  const dnEl = document.getElementById('downPct');
+  const btn99 = document.getElementById('btnBuy99');
+  const upCents = upEl ? parseInt(upEl.textContent, 10) : NaN;
+  const dnCents = dnEl ? parseInt(dnEl.textContent, 10) : NaN;
+  if (btn99) btn99.classList.toggle('at-99', upCents === 99 || dnCents === 99);
+}
+
+function updateBuy99ButtonLabel() {
+  var btn = document.getElementById('btnBuy99');
+  if (!btn) return;
+  btn.textContent = waitingFor99 ? 'Waiting for 99¢ (click to cancel)' : 'Buy at 99¢';
+}
+
+var positionsRefreshInterval = null;
+
+async function loadOpenOrdersAndBalance() {
+  const content = document.getElementById('positionsContent');
+  const btnRefresh = document.getElementById('btnRefreshPositions');
+  if (!content) return;
+  if (!tradingClient) {
+    content.innerHTML = '<p style="font-size:12px;color:var(--text-dim);">Connect MetaMask to see balance and open orders.</p>';
+    if (btnRefresh) btnRefresh.style.display = 'none';
+    var balEl = document.getElementById('usdceBalance');
+    if (balEl) { balEl.style.display = 'none'; }
+    return;
+  }
+  if (btnRefresh) btnRefresh.style.display = 'inline-block';
+  content.innerHTML = '<p style="font-size:12px;color:var(--text-dim);">Loading…</p>';
+  try {
+    const [balanceRes, ordersRes] = await Promise.all([
+      tradingClient.getBalanceAllowance({ asset_type: 'COLLATERAL' }).catch(function () { return null; }),
+      tradingClient.getOpenOrders().catch(function () { return { data: [] }; })
+    ]);
+    let html = '';
+    var balNum = null;
+    if (balanceRes && (balanceRes.balance !== undefined || balanceRes.balanceAllowance !== undefined)) {
+      balNum = parseFloat(balanceRes.balance || balanceRes.balanceAllowance || 0);
+      html += '<div class="positions-balance"><strong>USDCe balance:</strong> $' + balNum.toFixed(2) + '</div>';
+    } else {
+      html += '<div class="positions-balance"><strong>USDCe</strong> balance: —</div>';
+    }
+    var balEl = document.getElementById('usdceBalance');
+    if (balEl) {
+      balEl.textContent = balNum !== null ? 'USDCe: $' + balNum.toFixed(2) : 'USDCe: —';
+      balEl.style.display = 'inline-block';
+    }
+    const orders = ordersRes && Array.isArray(ordersRes.data) ? ordersRes.data : (Array.isArray(ordersRes) ? ordersRes : []);
+    html += '<div class="label-99" style="margin-bottom:6px;">Open orders (' + orders.length + ')</div>';
+    if (orders.length === 0) {
+      html += '<p style="font-size:12px;color:var(--text-dim);">No open orders.</p>';
+    } else {
+      html += '<div class="open-orders-list">';
+      for (var i = 0; i < orders.length; i++) {
+        var o = orders[i];
+        var price = o.price !== undefined ? (typeof o.price === 'number' ? o.price : parseFloat(o.price)) : 0;
+        var size = o.size !== undefined ? (typeof o.size === 'number' ? o.size : parseFloat(o.size)) : 0;
+        var side = (o.side === 0 || (o.side && o.side.toString() === '0') || (o.side && o.side.toLowerCase() === 'buy')) ? 'BUY' : 'SELL';
+        var tokenId = o.tokenID || o.token_id || o.asset_id || '';
+        var isUp = clobTokenInfo && clobTokenInfo.tokenIds && (clobTokenInfo.tokenIds[0] === tokenId ? clobTokenInfo.isUpFirst : clobTokenInfo.tokenIds[1] === tokenId ? !clobTokenInfo.isUpFirst : null);
+        var sideLabel = isUp === true ? '↑ Up' : (isUp === false ? '↓ Down' : side);
+        var orderId = o.id || o.orderID || o.order_id || '';
+        html += '<div class="open-order-item">';
+        html += '<span class="' + (sideLabel.indexOf('Up') !== -1 ? 'side-up' : 'side-down') + '">' + side + ' ' + sideLabel + '</span>';
+        html += '<span>' + Math.round(price * 100) + '¢ × ' + size + '</span>';
+        html += '<span class="order-id" title="' + orderId + '">' + (orderId ? orderId.slice(0, 12) + '…' : '') + '</span>';
+        if (orderId) html += '<button type="button" class="btn-cancel" data-order-id="' + orderId + '">Cancel</button>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    content.innerHTML = html;
+    content.querySelectorAll('.btn-cancel').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-order-id');
+        if (id && tradingClient) cancelOrder(id);
+      });
+    });
+  } catch (e) {
+    console.error('[BTC15m] Positions load error:', e);
+    content.innerHTML = '<p style="font-size:12px;color:var(--red);">Failed to load: ' + (e.message || e) + '</p>';
+  }
+}
+
+async function cancelOrder(orderId) {
+  if (!tradingClient) return;
+  try {
+    await tradingClient.cancelOrder(orderId);
+    setTradeMsg('Order cancelled.');
+    loadOpenOrdersAndBalance();
+  } catch (e) {
+    setTradeMsg('Cancel failed: ' + (e.message || e), true);
+  }
+}
+
+async function buyAt99() {
+  if (waitingFor99) {
+    waitingFor99 = false;
+    updateBuy99ButtonLabel();
+    setTradeMsg('Cancelled.', false);
+    return;
+  }
+  const upEl = document.getElementById('upPct');
+  const dnEl = document.getElementById('downPct');
+  const upCents = upEl ? parseInt(upEl.textContent, 10) : NaN;
+  const dnCents = dnEl ? parseInt(dnEl.textContent, 10) : NaN;
+  if (upCents === 99 || dnCents === 99) {
+    const btn = document.getElementById('btnBuy99');
+    if (btn) btn.disabled = true;
+    try {
+      if (upCents === 99) await placeOrderAt99('up', false);
+      if (dnCents === 99) await placeOrderAt99('down', false);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+    return;
+  }
+  waitingFor99 = true;
+  updateBuy99ButtonLabel();
+  setTradeMsg('Waiting for 99¢…', false);
+}
+
+function tryAutoBuy99(upCents, downCents) {
+  var el = document.getElementById('autoBuy99Check');
+  if (el && !el.checked) return;
+  if (!tradingClient || !clobTokenInfo) return;
+  if (upCents === 99 && !autoBuy99Done.up) {
+    autoBuy99Done.up = true;
+    placeOrderAt99('up');
+  }
+  if (downCents === 99 && !autoBuy99Done.down) {
+    autoBuy99Done.down = true;
+    placeOrderAt99('down');
+  }
+}
+
+async function placeOrderAt99(side, manageButton) {
+  if (!clobTokenInfo) {
+    setTradeMsg('Market data not ready.', true);
+    return;
+  }
+  if (!tradingClient) {
+    setTradeMsg('Connect MetaMask first.', true);
+    return;
+  }
+  const sizeEl = document.getElementById('tradeSize');
+  const size = sizeEl ? parseFloat(sizeEl.value, 10) : 10;
+  if (!size || size < 1) {
+    setTradeMsg('Enter size ≥ 1 in the form above.', true);
+    return;
+  }
+  const tokenId = side === 'up'
+    ? (clobTokenInfo.isUpFirst ? clobTokenInfo.tokenIds[0] : clobTokenInfo.tokenIds[1])
+    : (clobTokenInfo.isUpFirst ? clobTokenInfo.tokenIds[1] : clobTokenInfo.tokenIds[0]);
+  const price = 0.99;
+  setTradeMsg('Placing 99¢ order...', false);
+  const btn99 = document.getElementById('btnBuy99');
+  if (manageButton !== false && btn99) btn99.disabled = true;
+  try {
+    const { OrderType, Side } = await import('https://esm.sh/@polymarket/clob-client');
+    var tickSize = '0.01';
+    var negRisk = false;
+    try {
+      tickSize = await tradingClient.getTickSize(tokenId);
+    } catch (_) {}
+    try {
+      negRisk = await tradingClient.getNegRisk(tokenId);
+    } catch (_) {}
+    const orderSize = typeof size === 'number' ? size : parseFloat(size);
+    const response = await tradingClient.createAndPostOrder(
+      { tokenID: tokenId, price, size: orderSize, side: Side.BUY },
+      { tickSize, negRisk },
+      OrderType.GTC
+    );
+    console.log('[BTC15m] 99¢ order response', response);
+    if (response && response.success === false && response.errorMsg) {
+      var msg = response.errorMsg;
+      if (/not enough balance|allowance/i.test(msg)) msg = 'Not enough USDCe balance or allowance. Fund your proxy with USDCe on Polygon and set allowances at polymarket.com (e.g. deposit or place one trade there first).';
+      setTradeMsg(msg, true);
+    } else {
+      const id = response.orderID || response.orderId;
+      setTradeMsg(id ? '99¢ order placed. ID: ' + id : (response.errorMsg || 'Order submitted'));
+      loadOpenOrdersAndBalance();
+    }
+  } catch (e) {
+    console.error('[BTC15m] 99¢ order error', e);
+    setTradeMsg('Order failed: ' + orderErrorMsg(e), true);
+  }
+  if (manageButton !== false && btn99) btn99.disabled = false;
+}
+
+async function placeOrder() {
+  if (!clobTokenInfo) {
+    setTradeMsg('Market data not ready.', true);
+    return;
+  }
+  if (!tradingClient) {
+    setTradeMsg('Connect MetaMask first.', true);
+    return;
+  }
+  const sideEl = document.getElementById('tradeSide');
+  const priceEl = document.getElementById('tradePrice');
+  const sizeEl = document.getElementById('tradeSize');
+  const side = sideEl?.value || 'up';
+  const priceCents = parseInt(priceEl?.value, 10);
+  const size = parseFloat(sizeEl?.value, 10);
+  if (!priceCents || priceCents < 1 || priceCents > 99) {
+    setTradeMsg('Enter price 1–99¢', true);
+    return;
+  }
+  if (!size || size < 1) {
+    setTradeMsg('Enter size ≥ 1', true);
+    return;
+  }
+  const tokenId = side === 'up'
+    ? (clobTokenInfo.isUpFirst ? clobTokenInfo.tokenIds[0] : clobTokenInfo.tokenIds[1])
+    : (clobTokenInfo.isUpFirst ? clobTokenInfo.tokenIds[1] : clobTokenInfo.tokenIds[0]);
+  const price = priceCents / 100;
+  setTradeMsg('Placing order...', false);
+  const btn = document.getElementById('btnPlaceOrder');
+  if (btn) btn.disabled = true;
+  try {
+    const { OrderType, Side } = await import('https://esm.sh/@polymarket/clob-client');
+    var tickSize = '0.01';
+    var negRisk = false;
+    try {
+      tickSize = await tradingClient.getTickSize(tokenId);
+    } catch (_) {}
+    try {
+      negRisk = await tradingClient.getNegRisk(tokenId);
+    } catch (_) {}
+    const orderSize = typeof size === 'number' ? size : parseFloat(size);
+    const response = await tradingClient.createAndPostOrder(
+      { tokenID: tokenId, price, size: orderSize, side: Side.BUY },
+      { tickSize, negRisk },
+      OrderType.GTC
+    );
+    console.log('[BTC15m] Place order response', response);
+    if (response && response.success === false && response.errorMsg) {
+      var msg = response.errorMsg;
+      if (/not enough balance|allowance/i.test(msg)) msg = 'Not enough USDCe balance or allowance. Fund your proxy with USDCe on Polygon and set allowances at polymarket.com (e.g. deposit or place one trade there first).';
+      setTradeMsg(msg, true);
+    } else {
+      const id = response.orderID || response.orderId;
+      setTradeMsg(id ? 'Order placed. ID: ' + id : (response.errorMsg || 'Order submitted'));
+      loadOpenOrdersAndBalance();
+    }
+    if (btn) btn.disabled = false;
+  } catch (e) {
+    console.error('[BTC15m] Place order error', e);
+    setTradeMsg('Order failed: ' + orderErrorMsg(e), true);
+    if (btn) btn.disabled = false;
+  }
+}
+
+// ── Main load ───────────────────────────────────
+let activeEndTs = 0;   // updated each load, read by pollLoop
+
+async function load() {
+  document.getElementById('statusText').textContent = 'Fetching...';
+  stopPollLoop();
+
+  const act = await findActive();
+  if (act) {
+    currentSlug = act.slug;
+    activeEndTs = act.endTs;
+    autoBuy99Done = { up: false, down: false };
+    waitingFor99 = false;
+    updateBuy99ButtonLabel();
+    clobTokenInfo = extractClobTokenInfo(act.event);
+    if (clobTokenInfo) log('Using CLOB for live prices');
+    document.getElementById('statusText').textContent = 'Live';
+    document.getElementById('liveDot').className = 'live-dot active';
+
+    // Render layout once; patch history when it arrives (no full re-render)
+    render(act);
+    fetchHistory().then(hist => {
+      if (currentSlug === act.slug) renderHistory(hist);
+    });
+
+    // Start adaptive poll loop (replaces old setInterval)
+    pollLoop(() => activeEndTs);
+  } else {
+    clobTokenInfo = null;
+    activeEndTs = 0;
+    log('No active market found');
+    document.getElementById('statusText').textContent = 'Waiting...';
+    document.getElementById('liveDot').className = 'live-dot';
+    document.getElementById('content').innerHTML = `
+      <div class="loading">
+        <div class="loading-text">No active BTC 15m market found.<br>
+        Retrying in 15 seconds...</div>
+      </div>`;
+    setTimeout(load, 15000);
+  }
+  document.getElementById('lastUpdate').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+}
+
+// ── Init ────────────────────────────────────────
+function init() {
+  if (typeof location !== 'undefined' && location.protocol === 'file:') {
+    const box = document.getElementById('localServerHelp');
+    const link = document.getElementById('localServerUrl');
+    const path = location.pathname || '';
+    const filename = path.split('/').filter(Boolean).pop() || 'index.html';
+    if (box) box.style.display = 'block';
+    if (link) {
+      link.href = 'http://localhost:8080/' + filename;
+      link.textContent = 'http://localhost:8080/' + filename;
+    }
+  }
+  const btnConnect = document.getElementById('btnConnect');
+  const btnUseProxy = document.getElementById('btnUseProxy');
+  if (btnConnect) btnConnect.addEventListener('click', connectMetaMask);
+  if (btnUseProxy) btnUseProxy.addEventListener('click', useProxyAddress);
+  load();
+  // pollLoop is started inside load() — no more setInterval
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
